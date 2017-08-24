@@ -178,6 +178,7 @@ class CricSpider:
     def monitor_stat(self):
         """按一下市场监测的统计键"""
         self.driver.find_element_by_xpath("//input[@value='统计']").click()
+        sleep(1)
 
     #################################################
     # 土地库相关
@@ -218,6 +219,16 @@ class CricSpider:
         self.land_date(begin, 'Begin')
         self.land_date(end, 'End')
 
+    def land_area(self, area_tuple):
+        """选择省份,城市,区域"""
+        # 分别执行点开菜单,等待选项显示,选中选项
+        for i, key in enumerate(['Province', 'City', 'Region']):
+            self.driver.find_element_by_id(f'select{key}').click()
+            self.wait.until(lambda driver: driver.find_element_by_link_text(area_tuple[i]).is_displayed())
+            self.click(area_tuple[i])
+        # 确定
+        self.driver.find_element_by_class_name('areayes').click()
+
     def land_city(self, city):
         """在自定义城市中选择一个"""
         self.driver.find_element_by_id('cityConfig').click()
@@ -245,6 +256,7 @@ class CricSpider:
     def land_stat(self):
         """按一下土地市场的统计键"""
         self.driver.find_element_by_xpath("//button[text()='统计']").click()
+        sleep(1)
 
 
 if __name__ == '__main__':
