@@ -9,6 +9,7 @@ class CricSpider:
         self.driver = webdriver.Chrome()
         self.wait = WebDriverWait(self.driver, 10)
         self.url = 'http://2015.app.cric.com/'
+        print('>>> 正在登陆...')
         self.driver.get(self.url)
         # 添加登陆后的cookie重新访问
         cookies = [
@@ -19,36 +20,45 @@ class CricSpider:
              'secure': False,
              'value': '34013194.20480.0000'},
             {'domain': '.2015.app.cric.com',
+             'expiry': 2134365837,
+             'httpOnly': False,
+             'name': 'BIGipServerpool_10.0.7',
+             'path': '/',
+             'secure': False,
+             'value': '34013194.20480.0000'},
+            {'domain': '.2015.app.cric.com',
              'httpOnly': False,
              'name': 'Hm_lpvt_dca78b8bfff3e4d195a71fcb0524dcf3',
              'path': '/',
              'secure': False,
-             'value': '1503474356'},
+             'value': '1503645921'},
             {'domain': '.cric.com',
-             'expiry': 1504079106.982804,
+             'expiry': 1504250665.122481,
              'httpOnly': True,
              'name': 'cric2015',
              'path': '/',
              'secure': False,
-             'value': 'C101A9F6D98B733C1ACDA77C8F59A308A206181EC2BA28017D5B5482980ED2E6A61F798D31E2DCE553208E8550D5AACBB0F3C3FA1CC004B4836B8DF95794A14F5AF682E978DB4847EB82FF2D'},
+             'value': '546902316F0DBBB252ED311B8FD3A990C7E1240FCA1FBDF7DA29D803E84A7304DC59E44C1A5CEB93A843AB79E61C7042DB92147BA6F4AB7F3B2CC7FD88FFF5EC992CB8AD5505DA1961B52CE5'},
             {'domain': '.2015.app.cric.com',
-             'expiry': 1535010356,
+             'expiry': 1535181921,
              'httpOnly': False,
              'name': 'Hm_lvt_dca78b8bfff3e4d195a71fcb0524dcf3',
              'path': '/',
              'secure': False,
              'value': '1503474313'},
             {'domain': '.cric.com',
-             'expiry': 1506066306.982859,
+             'expiry': 1506237865.122544,
              'httpOnly': False,
              'name': 'cric2015_token',
              'path': '/',
              'secure': False,
-             'value': 'username=c7WgHp4zScNtsm7KKQFU/Q==&verifycode=jjKbRj1fAaWKtVZoTqJCYQ==&token=ZT+H74zJs4mnpW93dJ9ZY0FGAy1+y8rRuGTlI9bd2c/2Bj5hjjCIbciiWaiJwSFh&usermobilephone=/xjKEQnYyec5HZvPfeoEsQ==&userid=Fiw/A5cH9X34OaMfzJTZzvuhDhEURUDyXzQkeVFh/K9SzWYASZeECe8KehkOlt37'}
+             'value': 'username=c7WgHp4zScNtsm7KKQFU/Q==&verifycode=0Vqz8LhLw2xCui4OAQ6PPw==&token=zu/+OEpVDdIFzwZ3QP+RuFx7Gt3sVbvsnOs3kv/sU3n72aW8fk5WLKdnemcEpghz&usermobilephone=/xjKEQnYyec5HZvPfeoEsQ==&userid=Fiw/A5cH9X34OaMfzJTZzvuhDhEURUDyXzQkeVFh/K9SzWYASZeECe8KehkOlt37'}
         ]
+
         for cookie in cookies:
             self.driver.add_cookie(cookie)
         self.driver.get(self.url)
+        print('>>> 登陆成功!')
 
     #################################################
     # 通用功能
@@ -151,7 +161,7 @@ class CricSpider:
         # 确定
         self.click('确定')
 
-    def area2(self, area, area2='请选择板块'):
+    def area2(self, area, area2=['请选择板块']):
         """板块选择，以查询分片区数据"""
         # 找到“不限”，单击
         self.driver.find_element_by_xpath("//div[@name='regionselecter_area_block']/div/div/p").click()
@@ -161,8 +171,10 @@ class CricSpider:
         self.driver.find_element_by_xpath(area_xpath).click()
         sleep(0.2)
         # 根据area2选中具体片区，默认为全部片区
-        self.driver.find_element_by_xpath(f"//div[@name='regionselecter_area_block']//label[text()='{area2}']").click()
-        sleep(0.2)
+        for each in area2:
+            self.driver.find_element_by_xpath(
+                f"//div[@name='regionselecter_area_block']//label[text()='{each}']").click()
+            sleep(0.2)
         # 确定
         self.click('确定')
 
@@ -179,6 +191,35 @@ class CricSpider:
         """按一下市场监测的统计键"""
         self.driver.find_element_by_xpath("//input[@value='统计']").click()
         sleep(1)
+
+    def monitor(self, date_range, output, area=False, area2=False, usg=['普通住宅'], index=False, column=False):
+        """市场监测综合分析查询动作
+        :data_range: 时间段元组
+        :output: 输出项列表
+        :param area:区域 默认不限
+        :param area2: 板块
+        :param usg : 物业类型列表 默认普通住宅
+        :param index: 纵轴 默认时间
+        :param column: 横轴 默认无
+        :return df
+        """
+        self.monitor_page('合肥')
+        sleep(1)
+        if index:
+            self.label(index)
+        if column:
+            self.label(column, 1)
+        self.date_range(*date_range)
+        if area:
+            self.area(area)
+        if area2:
+            self.label('板块')
+            self.area2(area2)
+        self.room_usg(usg)
+        self.monitor_stat()
+        self.monitor_output(output)
+        df = self.download2df()
+        return df
 
     #################################################
     # 土地库相关
@@ -257,6 +298,17 @@ class CricSpider:
         """按一下土地市场的统计键"""
         self.driver.find_element_by_xpath("//button[text()='统计']").click()
         sleep(1)
+
+    def land(self, area_tuple, date_range):
+        """跳转至土地统计页面,设置好时间,区域及交易方式"""
+        # 土地统计页面
+        self.land_page()
+        # 时间 年度
+        self.land_date_range(*date_range)
+        # 区域 详细到板块
+        self.land_area(area_tuple)
+        # 交易方式
+        self.land_method(['招拍挂土地'])
 
 
 if __name__ == '__main__':
