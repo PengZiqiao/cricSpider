@@ -153,11 +153,18 @@ class CricSpider:
         """区域选择"""
         # 找到“不限”，单击
         self.driver.find_element_by_xpath("//div[@name='regionselecter_region_block']/div/div/p").click()
+
         # area_xpath为需选中区域的label，待其出现后单击选中
-        area_xpath = f"//div[@name='regionselecter_region_block']//label[text()='{area}']"
-        self.wait.until(lambda driver: driver.find_element_by_xpath(area_xpath).is_displayed())
-        self.driver.find_element_by_xpath(area_xpath).click()
-        sleep(0.2)
+        if area == '全选':
+            sleep(0.5)
+            for each in ['蜀山区', '庐阳区', '政务区', '高新区', '瑶海区', '滨湖区', '包河区', '经济区', '新站区', '肥东县', '肥西县', '长丰县']:
+                area_xpath = f"//div[@name='regionselecter_region_block']//label[text()='{each}']"
+                self.driver.find_element_by_xpath(area_xpath).click()
+        else:
+            area_xpath = f"//div[@name='regionselecter_region_block']//label[text()='{area}']"
+            self.wait.until(lambda driver: driver.find_element_by_xpath(area_xpath).is_displayed())
+            self.driver.find_element_by_xpath(area_xpath).click()
+            sleep(0.2)
         # 确定
         self.click('确定')
 
@@ -267,6 +274,12 @@ class CricSpider:
             self.driver.find_element_by_id(f'select{key}').click()
             self.wait.until(lambda driver: driver.find_element_by_link_text(area_tuple[i]).is_displayed())
             self.click(area_tuple[i])
+
+        # 全市
+        if area_tuple[-1] == '全选':
+            self.click('庐江县')
+            self.click('巢湖市')
+
         # 确定
         self.driver.find_element_by_class_name('areayes').click()
 

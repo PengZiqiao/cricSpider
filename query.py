@@ -143,33 +143,28 @@ class CricQuery(CricSpider):
 
             # 向过去推算
             # df_ = df[self.xmonth_range[0]:'2016年12月']
-            df_ = df
-            stk = self.stock_base
-            for index in reversed(df_.index):
-                df_.at[index, '库存'] = stk
-                # 上期库存(在下一次迭代时赋值给['库存']) = 本期库存 - (本期上市 - 本期成交)
-                stk -= df_.at[index, '供应面积'] - df_.at[index, '成交面积']
+            # df_ = df
+            # stk = self.stock_base
+            # for index in reversed(df_.index):
+            #     df_.at[index, '库存'] = stk
+            #     # 上期库存(在下一次迭代时赋值给['库存']) = 本期库存 - (本期上市 - 本期成交)
+            #     stk -= df_.at[index, '供应面积'] - df_.at[index, '成交面积']
 
             # 向未来推算
-            # df_ = df['2017年01月':self.xmonth_range[1]]
-            # stk = self.stock2017
-            # for index in df_.index:
-            #     # 本期库存 = 上期库存 + (本期上市 - 本期成交)
-            #     stk += df_.at[index, '供应面积'] - df_.at[index, '成交面积']
-            #     df_.at[index, '库存'] = stk
+            df_ = df['2017年01月':self.xmonth_range[1]]
+            stk = self.stock_base
+            for index in df_.index:
+                # 本期库存 = 上期库存 + (本期上市 - 本期成交)
+                stk += df_.at[index, '供应面积'] - df_.at[index, '成交面积']
+                df_.at[index, '库存'] = stk
 
             # 去化周期 = 存量 / 去化速度速度
             df['去化周期'] = df['库存'] / df['去化速度']
             return df
 
         def ajust_df(df):
-            # 除了17年保留月度数据,其他年份只保留年末数据
-            for index in df.index:
-                if '12月' not in index and '2017年' not in index:
-                    df = df.drop(index)
-
             # 只保留库存和去化周期两列
-            df = df[['库存', '去化周期']]
+            df = df.loc['2017年01月':, ['库存', '去化周期']]
 
             # 面积换算成万方, 库存\去化周期保留两位小数
             df['库存'] = df['库存'] / 1e4
@@ -208,7 +203,12 @@ class CricQuery(CricSpider):
     #################################################
 
     def plate_gxj(self, area):
-        return self.monitor(self.month_range, ['供应面积', '成交面积', '成交均价'], area2=area, index='地域').drop('汇总')
+        if area == '全选':
+            df = self.monitor(self.month_range, ['供应面积', '成交面积', '成交均价'], area=area, index='地域').drop('汇总')
+        else:
+            df = self.monitor(self.month_range, ['供应面积', '成交面积', '成交均价'], area2=area, index='地域').drop('汇总')
+        df[['供应面积', '成交面积']] = round(df[['供应面积', '成交面积']] / 1e4, 2)
+        return df
 
 
 if __name__ == '__main__':
@@ -242,46 +242,56 @@ if __name__ == '__main__':
         '长丰县': 2297526,
         '肥西县': 768596,
         '肥东县': 0,
+        '全选': 5319022
     }
     today = date.today()
 
     # 遍历每个版块
     for area in area_dict:
-        print('=' * 20, area, '=' * 20)
-        # 库存基数
-        c.stock_base = stock[area]
-        # 区域tuple
-        area_tuple = ('安徽省', '合肥', area)
-        # 创建一个excel文件
-        book_path = f'e:/city_report/合肥/{today}/{area}.xlsx'
-        excel.creat_book(book_path)
+        while True:
+            try:
+                print('=' * 20, area, '=' * 20)
+                # 库存基数
+                c.stock_base = stock[area]
+                # 区域tuple
+                area_tuple = ('安徽省', '合肥', area)
+                # 创建一个excel文件
+                book_path = f'e:/city_report/合肥/{today}/{area}.xlsx'
+                excel.creat_book(book_path)
 
-        # 土地结构
-        print(f'>>> 正在查询土地结构...')
-        df = c.land_structure(area_tuple)
-        excel.df2sheet(book_path, '土地成交结构', df)
+                # 土地结构
+                print(f'>>> 正在查询土地结构...')
+                df = c.land_structure(area_tuple)
+                excel.df2sheet(book_path, '土地成交结构', df)
 
-        # 土地量价
-        print(f'>>> 正在查询土地成交量价特征...')
-        df = c.land_volume_price(area_tuple)
-        excel.df2sheet(book_path, '土地量价特征', df)
+                # 土地量价
+                print(f'>>> 正在查询土地成交量价特征...')
+                df = c.land_volume_price(area_tuple)
+                excel.df2sheet(book_path, '土地量价特征', df)
 
-        # 住宅供销价走势
-        print(f'>>> 正在查询住宅供销价走势...')
-        df_year, df_month, df_plate = c.gxj(area)
-        excel.df2sheet(book_path, '年度供销价', df_year)
-        excel.df2sheet(book_path, '月度供销价', df_month)
-        excel.df2sheet(book_path, '片区供销价', df_plate)
+                # 住宅供销价走势
+                print(f'>>> 正在查询住宅供销价走势...')
+                df_year, df_month, df_plate = c.gxj(area)
+                excel.df2sheet(book_path, '年度供销价', df_year)
+                excel.df2sheet(book_path, '月度供销价', df_month)
+                excel.df2sheet(book_path, '片区供销价', df_plate)
 
-        # 库存及去化周期
-        print(f'>>> 正在计算库存及去化周期...')
-        df, df_ = c.stock(area)
-        excel.df2sheet(book_path, '库存及去化', df)
-        # excel.df2sheet(book_path, '库存及去化备查', df_)
+                # 库存及去化周期
+                print(f'>>> 正在计算库存及去化周期...')
+                df, df_ = c.stock(area)
+                excel.df2sheet(book_path, '库存及去化', df)
+                # excel.df2sheet(book_path, '库存及去化备查', df_)
 
-        # 成交结构
-        print(f'>>> 正在查询成交结构数据...')
-        df1, df2, df3 = c.structure(area)
-        excel.df2sheet(book_path, '面积段', df1)
-        excel.df2sheet(book_path, '单价段', df2)
-        excel.df2sheet(book_path, '总价段', df3)
+                # 成交结构
+                print(f'>>> 正在查询成交结构数据...')
+                df1, df2, df3 = c.structure(area)
+                excel.df2sheet(book_path, '面积段', df1)
+                excel.df2sheet(book_path, '单价段', df2)
+                excel.df2sheet(book_path, '总价段', df3)
+
+                break
+            except:
+                print('>>> -^-;')
+                continue
+
+    c.driver.close()

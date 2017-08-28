@@ -1,4 +1,4 @@
-from time import sleep
+
 from datetime import date
 import pandas as pd
 from query import CricQuery, ToExcel
@@ -65,6 +65,8 @@ if __name__ == '__main__':
     df = round(df / 1e4 / 4, 2)
     df.columns = ['住宅年均去化量']
     df_city = pd.concat([df_city, df], axis=1, join='inner')
+
+    c.driver.close()
 
     # 计算列
     df_city['地楼比'] = df_city['2017年含住宅类成交楼面价'] / df_city['2017年商品住宅成交均价']
