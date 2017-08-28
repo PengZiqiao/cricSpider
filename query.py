@@ -32,21 +32,27 @@ class ToExcel:
 class CricQuery(CricSpider):
     """固化一些查询动作"""
     year_range = ('2013年', '2017年')
-    month_range = ('2016年01月', '2017年07月')
-    xmonth_range = ('2013年01月', '2017年07月')
+    month_range = ('2016年01月', '2017年08月')
+    xmonth_range = ('2013年01月', '2017年08月')
     # 基准库存, 其他库存按照这个值,结合供销量,向前向后推算
     stock_base = 0
 
     def download2df(self):
-        download_path = 'C:/Users/dell/Downloads/CRIC2016.xls'
-        # 下载文件
-        self.click('导出表格')
-        sleep(1)
-        # 读入df
-        df = pd.read_excel(download_path, index_col=0, header=0)
-        # 删除文件
-        sleep(1)
-        os.remove(download_path)
+        while True:
+            try:
+                download_path = 'C:/Users/dell/Downloads/CRIC2016.xls'
+                # 下载文件
+                self.click('导出表格')
+                sleep(1)
+                # 读入df
+                df = pd.read_excel(download_path, index_col=0, header=0)
+                # 删除文件
+                sleep(1)
+                os.remove(download_path)
+                break
+            except:
+                print('>>> ^-^;')
+                continue
 
         return df
 
@@ -86,7 +92,8 @@ class CricQuery(CricSpider):
         self.land_stat()
         # to Dataframe
         df = pd.read_html(self.driver.page_source, index_col=0, header=0)[0]
-        return df[['幅数', '成交楼板价']].drop('汇总')
+        df['用地面积'] = round(df['用地面积'] / 1e4, 2)
+        return df[['用地面积', '成交楼板价']].drop('汇总')
 
     #################################################
     # 市场走势
@@ -108,7 +115,7 @@ class CricQuery(CricSpider):
         df_year = ajust_df(df)
 
         # 月度 显示条件后,改变统计时间再统计一次
-        sleep(1.5)
+        sleep(1)
         print('>>> 月度...')
         self.driver.find_element_by_class_name('cric_more_search_condition').click()
         self.date_range(*self.month_range)
@@ -116,7 +123,7 @@ class CricQuery(CricSpider):
         df_month = ajust_df(self.download2df())
 
         # 分片区
-        print('>>> 月度...')
+        print('>>> 片区...')
         df_plate = self.plate_gxj(area)
 
         return df_year, df_month, df_plate
@@ -179,7 +186,7 @@ class CricQuery(CricSpider):
         df1 = self.monitor(self.xmonth_range, ['成交套数'], area, column='面积段')[1:-1]
 
         # 单价段
-        sleep(1.5)
+        sleep(1)
         print('>>> 单价段...')
         self.driver.find_element_by_class_name('cric_more_search_condition').click()
         self.label('单价段', 1)
@@ -187,7 +194,7 @@ class CricQuery(CricSpider):
         df2 = self.download2df()[1:-1]
 
         # 总价段
-        sleep(1.5)
+        sleep(1)
         print('>>> 总价段...')
         self.driver.find_element_by_class_name('cric_more_search_condition').click()
         self.label('总价段', 1)
