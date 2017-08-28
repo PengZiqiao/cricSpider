@@ -35,7 +35,7 @@ class CricQuery(CricSpider):
     month_range = ('2016年01月', '2017年07月')
     xmonth_range = ('2013年01月', '2017年07月')
     # 基准库存, 其他库存按照这个值,结合供销量,向前向后推算
-    stock_base = 12479533 - 12421884
+    stock_base = 0
 
     def download2df(self):
         download_path = 'C:/Users/dell/Downloads/CRIC2016.xls'
@@ -222,11 +222,27 @@ if __name__ == '__main__':
         '长丰县': ['岗集片区', '北城片区', '双凤工业园片区']
     }
 
+    stock = {
+        '新站区': 386400,
+        '高新区': 322000,
+        '经济区': 269200,
+        '包河区': 221000,
+        '瑶海区': 209100,
+        '政务区': 140000,
+        '蜀山区': 117400,
+        '庐阳区': 276600,
+        '滨湖区': 311200,
+        '长丰县': 2297526,
+        '肥西县': 768596,
+        '肥东县': 0,
+    }
     today = date.today()
 
     # 遍历每个版块
     for area in area_dict:
         print('=' * 20, area, '=' * 20)
+        # 库存基数
+        c.stock_base = stock[area]
         # 区域tuple
         area_tuple = ('安徽省', '合肥', area)
         # 创建一个excel文件
@@ -249,7 +265,6 @@ if __name__ == '__main__':
         excel.df2sheet(book_path, '年度供销价', df_year)
         excel.df2sheet(book_path, '月度供销价', df_month)
         excel.df2sheet(book_path, '片区供销价', df_plate)
-
 
         # 库存及去化周期
         print(f'>>> 正在计算库存及去化周期...')
