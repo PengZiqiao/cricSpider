@@ -1,0 +1,54 @@
+[
+  {
+    "domain": "2015.app.cric.com",
+    "httpOnly": false,
+    "name": "BIGipServerpool_10.0.7",
+    "path": "/",
+    "secure": false,
+    "value": "34013194.20480.0000"
+  },
+  {
+    "domain": ".2015.app.cric.com",
+    "expiry": 2134365837,
+    "httpOnly": false,
+    "name": "BIGipServerpool_10.0.7",
+    "path": "/",
+    "secure": false,
+    "value": "34013194.20480.0000"
+  },
+  {
+    "domain": ".2015.app.cric.com",
+    "httpOnly": false,
+    "name": "Hm_lpvt_dca78b8bfff3e4d195a71fcb0524dcf3",
+    "path": "/",
+    "secure": false,
+    "value": "1504673182"
+  },
+  {
+    "domain": ".cric.com",
+    "expiry": 1505268871.437615,
+    "httpOnly": true,
+    "name": "cric2015",
+    "path": "/",
+    "secure": false,
+    "value": "E2759B0CBDCA1EAFF62F00CF0FD7A98A0CE67E621F3F5FDF8455429CAB72FC814AC9347EDEC22E7537FFD9189A27644F8B7AB3AD32BF350CBABBE93504DA10A1687B04AB9FF42FAF535896A4"
+  },
+  {
+    "domain": ".2015.app.cric.com",
+    "expiry": 1536209181,
+    "httpOnly": false,
+    "name": "Hm_lvt_dca78b8bfff3e4d195a71fcb0524dcf3",
+    "path": "/",
+    "secure": false,
+    "value": "1503474313"
+  },
+  {
+    "domain": ".cric.com",
+    "expiry": 1507256071.437677,
+    "httpOnly": false,
+    "name": "cric2015_token",
+    "path": "/",
+    "secure": false,
+    "value": "username=c7WgHp4zScNtsm7KKQFU/Q==&verifycode=RZM5gBimR5u0ddM/xYmVow==&token=1VzLcwo1GjeDfeCjAUkG9fjOo9u+DlFKlckRdi6qsbQbOx00GTEK/h/IVM7IHBF4&usermobilephone=/xjKEQnYyec5HZvPfeoEsQ==&userid=Fiw/A5cH9X34OaMfzJTZzvuhDhEURUDyXzQkeVFh/K9SzWYASZeECe8KehkOlt37"
+  }
+]

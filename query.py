@@ -3,6 +3,7 @@ import pandas as pd
 import xlwings as xw
 from datetime import date
 import os
+
 from time import sleep
 
 
@@ -208,6 +209,7 @@ class CricQuery(CricSpider):
         else:
             df = self.monitor(self.month_range, ['供应面积', '成交面积', '成交均价'], area2=area, index='地域').drop('汇总')
         df[['供应面积', '成交面积']] = round(df[['供应面积', '成交面积']] / 1e4, 2)
+        df['成交均价'] = df['成交均价'].round().astype('int')
         return df
 
 

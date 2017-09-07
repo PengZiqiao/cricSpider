@@ -1,6 +1,20 @@
-from selenium import webdriver
+import os
 from time import sleep
+import json
+from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait, Select
+
+
+def json_load(filename):
+    path = os.getcwd()
+    with open(f'{path}/{filename}.json', 'r') as f:
+        return json.load(f)
+
+
+def json_dump(obj, filename):
+    path = os.getcwd()
+    with open(f'{path}/{filename}.json', 'w') as f:
+        json.dump(obj, f)
 
 
 class CricSpider:
@@ -9,56 +23,14 @@ class CricSpider:
         self.driver = webdriver.Chrome()
         self.wait = WebDriverWait(self.driver, 10)
         self.url = 'http://2015.app.cric.com/'
-        print('>>> 正在登陆...')
+        print('>>> login...')
         self.driver.get(self.url)
         # 添加登陆后的cookie重新访问
-        cookies = [
-            {'domain': '2015.app.cric.com',
-             'httpOnly': False,
-             'name': 'BIGipServerpool_10.0.7',
-             'path': '/',
-             'secure': False,
-             'value': '34013194.20480.0000'},
-            {'domain': '.2015.app.cric.com',
-             'expiry': 2134365837,
-             'httpOnly': False,
-             'name': 'BIGipServerpool_10.0.7',
-             'path': '/',
-             'secure': False,
-             'value': '34013194.20480.0000'},
-            {'domain': '.2015.app.cric.com',
-             'httpOnly': False,
-             'name': 'Hm_lpvt_dca78b8bfff3e4d195a71fcb0524dcf3',
-             'path': '/',
-             'secure': False,
-             'value': '1503645921'},
-            {'domain': '.cric.com',
-             'expiry': 1504250665.122481,
-             'httpOnly': True,
-             'name': 'cric2015',
-             'path': '/',
-             'secure': False,
-             'value': '546902316F0DBBB252ED311B8FD3A990C7E1240FCA1FBDF7DA29D803E84A7304DC59E44C1A5CEB93A843AB79E61C7042DB92147BA6F4AB7F3B2CC7FD88FFF5EC992CB8AD5505DA1961B52CE5'},
-            {'domain': '.2015.app.cric.com',
-             'expiry': 1535181921,
-             'httpOnly': False,
-             'name': 'Hm_lvt_dca78b8bfff3e4d195a71fcb0524dcf3',
-             'path': '/',
-             'secure': False,
-             'value': '1503474313'},
-            {'domain': '.cric.com',
-             'expiry': 1506237865.122544,
-             'httpOnly': False,
-             'name': 'cric2015_token',
-             'path': '/',
-             'secure': False,
-             'value': 'username=c7WgHp4zScNtsm7KKQFU/Q==&verifycode=0Vqz8LhLw2xCui4OAQ6PPw==&token=zu/+OEpVDdIFzwZ3QP+RuFx7Gt3sVbvsnOs3kv/sU3n72aW8fk5WLKdnemcEpghz&usermobilephone=/xjKEQnYyec5HZvPfeoEsQ==&userid=Fiw/A5cH9X34OaMfzJTZzvuhDhEURUDyXzQkeVFh/K9SzWYASZeECe8KehkOlt37'}
-        ]
-
+        cookies = json_load('cookies')
         for cookie in cookies:
             self.driver.add_cookie(cookie)
         self.driver.get(self.url)
-        print('>>> 登陆成功!')
+        print('>>> ok!')
 
     #################################################
     # 通用功能
@@ -96,13 +68,14 @@ class CricSpider:
         s = Select(self.driver.find_element_by_id(id))
         s.select_by_visible_text(value)
 
-    def label(self, name, index=0):
+    def label(self, name, index=0, pause=0.2):
         """
         单击label元素
         :param name:
         :param index: 出先多个同名label时，同过下标确定，默认为0
         """
         self.driver.find_elements_by_xpath(f"//label[text()='{name}']")[index].click()
+        sleep(pause)
 
     def click(self, name, pause=0.2):
         """
@@ -121,10 +94,12 @@ class CricSpider:
         """跳转到市场监测页面"""
         url = f'{self.url}Statistic/MarketMonitor/MarketMonitoringIndex?CityName={city}'
         self.driver.get(url)
-        self.loaded()
+        sleep(0.2)
+        self.wait.until(lambda driver: driver.find_element_by_xpath("//input[@value='统计']"))
         # 直接进入综合分析
         self.click('综合分析')
-        self.loaded()
+        sleep(0.2)
+        self.wait.until(lambda driver: driver.find_element_by_xpath("//input[@value='统计']"))
 
     def date(self, date, point):
         """
@@ -172,16 +147,19 @@ class CricSpider:
         """板块选择，以查询分片区数据"""
         # 找到“不限”，单击
         self.driver.find_element_by_xpath("//div[@name='regionselecter_area_block']/div/div/p").click()
+
         # area_xpath为需选中区域的label，待其出现后单击选中
         area_xpath = f"//div[@name='regionselecter_area_block']//label[text()='{area}']"
         self.wait.until(lambda driver: driver.find_element_by_xpath(area_xpath).is_displayed())
         self.driver.find_element_by_xpath(area_xpath).click()
         sleep(0.2)
+
         # 根据area2选中具体片区，默认为全部片区
         for each in area2:
             self.driver.find_element_by_xpath(
                 f"//div[@name='regionselecter_area_block']//label[text()='{each}']").click()
             sleep(0.2)
+
         # 确定
         self.click('确定')
 
@@ -193,11 +171,12 @@ class CricSpider:
         """市场监测下的统计输出项"""
         self.checkbox('cbx_title_all', value_list)
         self.click('确定')
+        sleep(0.2)
 
     def monitor_stat(self):
         """按一下市场监测的统计键"""
         self.driver.find_element_by_xpath("//input[@value='统计']").click()
-        sleep(1)
+        sleep(0.5)
 
     def monitor(self, date_range, output, area=False, area2=False, usg=['普通住宅'], index=False, column=False):
         """市场监测综合分析查询动作
@@ -210,21 +189,36 @@ class CricSpider:
         :param column: 横轴 默认无
         :return df
         """
+        # 跳转到市场监测-综合分析
         self.monitor_page('合肥')
-        sleep(1)
+
+        # 纵轴
         if index:
             self.label(index)
+        # 横轴
         if column:
-            self.label(column, 1)
+            self.label(column, index=1)
+
+        # 统计时间
         self.date_range(*date_range)
+
+        # 地域选择
         if area:
             self.area(area)
         if area2:
             self.label('板块')
-            self.area2(area2)
+            self.area2(*area2)
+
+        # 物业类型
         self.room_usg(usg)
+
+        # 按下统计
         self.monitor_stat()
+
+        # 选择输出项
         self.monitor_output(output)
+
+        # 下载返回df
         df = self.download2df()
         return df
 
@@ -310,7 +304,7 @@ class CricSpider:
     def land_stat(self):
         """按一下土地市场的统计键"""
         self.driver.find_element_by_xpath("//button[text()='统计']").click()
-        sleep(1)
+        sleep(0.5)
 
     def land(self, area_tuple, date_range):
         """跳转至土地统计页面,设置好时间,区域及交易方式"""
