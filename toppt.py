@@ -3,6 +3,7 @@ from pptx import Presentation
 from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 import pandas as pd
+from numpy import nan
 
 
 class PPT:
@@ -51,6 +52,7 @@ class CityPPT(PPT):
 
     def excel2chart(self, placehold, file, sheet, index, columns=[]):
         df = pd.read_excel(file, sheet, index_col=0)
+        df = df.replace(nan, 0)
         df.index = index
         if columns:
             df.columns = columns
@@ -100,6 +102,7 @@ class CityPPT(PPT):
         file = f'{self.path}/{plate}_{pianqu}.xlsx'
         index_year = list(f'{x:02d}' for x in range(7, 17))
         index_year.append('17.1-8')
+        index_year_ = list(range(2007, 2017))
         index_month = list(f'17.0{x}' for x in range(1, 9))
         columns_gxj = ['上市面积(万㎡)', '成交面积(万㎡)', '均价(元/㎡)']
         columns_stk = ['库存(万㎡)', '去化周期(月)']
@@ -117,7 +120,7 @@ class CityPPT(PPT):
         # chart3
         placehold[18].text = '2007-2016{pianqu_}商品住宅存量及去化周期年度走势'
         sheet = '年度库存'
-        self.excel2chart(placehold[19], file, sheet, index_year, columns_stk)
+        self.excel2chart(placehold[19], file, sheet, index_year_, columns_stk)
 
         # chart4
         placehold[20].text = '2017.1-2017.8{pianqu_}商品住宅存量及去化周期月度走势'
@@ -129,7 +132,7 @@ if __name__ == '__main__':
     area_dict = json_load('area_dict')
 
     for plate in area_dict:
-        print('='*20, plate, '='*20)
+        print('=' * 20, plate, '=' * 20)
         # 创建一个新的ppt
         ppt = CityPPT()
 
