@@ -1,54 +1,12 @@
-from spider import json_load
-from pptx import Presentation
-from pptx.chart.data import ChartData
-from pptx.enum.chart import XL_CHART_TYPE
 import pandas as pd
 from numpy import nan
 
-
-class PPT:
-    def __init__(self, input_file='template.pptx'):
-        self.prs = Presentation(input_file)
-        self.slides = self.prs.slides
-
-    def save(self, output_file='output.pptx'):
-        self.prs.save(output_file)
-
-    def analyze_layouts(self, outputfile='output.pptx'):
-        # 遍历每个版式与占位符
-        for s, layout in enumerate(self.prs.slide_layouts):
-            slide = self.prs.slides.add_slide(layout)
-
-            # 是否有标题占位符
-            try:
-                title = slide.shapes.title
-                title.text = f'{s}样式-标题'
-            except AttributeError:
-                print(f'>>> page {s} has no title')
-
-            # 将其他占位符(placeholders)命名为x样式x号
-            for each in slide.placeholders:
-                each.text = f'{s}样式-{each.placeholder_format.idx}号'
-
-            # 保存
-            self.save(outputfile)
-
-    def chart(self, df, placehold):
-        data = ChartData()
-        # 横轴名
-        data.categories = list(df.index)
-        # 系列名，数据
-        for col_name in df:
-            array = df[col_name].tolist()
-            data.add_series(col_name, array)
-        # 图表类型
-        type = XL_CHART_TYPE.COLUMN_CLUSTERED
-        # 指定placehold中插入图表
-        placehold.insert_chart(type, data)
+from consts import areas
+from office import PPT
 
 
 class CityPPT(PPT):
-    path = r'E:\city_report\合肥\2017-09-06'
+    path = r'E:\city_report\合肥\2017-09-12'
 
     def excel2chart(self, placehold, file, sheet, index, columns=[]):
         df = pd.read_excel(file, sheet, index_col=0)
@@ -102,34 +60,35 @@ class CityPPT(PPT):
         file = f'{self.path}/{plate}_{pianqu}.xlsx'
         index_year = list(f'{x:02d}' for x in range(7, 17))
         index_year.append('17.1-8')
-        index_year_ = list(range(2007, 2017))
+        index_year_ = list(f'{x:02d}' for x in range(7, 17))
+        index_year_.append('17.8')
         index_month = list(f'17.0{x}' for x in range(1, 9))
         columns_gxj = ['上市面积(万㎡)', '成交面积(万㎡)', '均价(元/㎡)']
         columns_stk = ['库存(万㎡)', '去化周期(月)']
 
         # chart1
-        placehold[14].text = '2007-2017.8{pianqu_}商品住宅年度供销走势'
+        placehold[14].text = f'2007-2017.8{pianqu_}商品住宅年度供销走势'
         sheet = '年度供销价'
         self.excel2chart(placehold[15], file, sheet, index_year, columns_gxj)
 
         # chart2
-        placehold[16].text = '2017年1-8月{pianqu_}商品住宅月度供销走势'
+        placehold[16].text = f'2017年1-8月{pianqu_}商品住宅月度供销走势'
         sheet = '月度供销价'
         self.excel2chart(placehold[17], file, sheet, index_month, columns_gxj)
 
         # chart3
-        placehold[18].text = '2007-2016{pianqu_}商品住宅存量及去化周期年度走势'
+        placehold[18].text = f'2007-2016{pianqu_}商品住宅存量及去化周期年度走势'
         sheet = '年度库存'
         self.excel2chart(placehold[19], file, sheet, index_year_, columns_stk)
 
         # chart4
-        placehold[20].text = '2017.1-2017.8{pianqu_}商品住宅存量及去化周期月度走势'
+        placehold[20].text = f'2017.1-2017.8{pianqu_}商品住宅存量及去化周期月度走势'
         sheet = '月度库存'
         self.excel2chart(placehold[21], file, sheet, index_month, columns_stk)
 
 
 if __name__ == '__main__':
-    area_dict = json_load('area_dict')
+    area_dict = areas
 
     for plate in area_dict:
         print('=' * 20, plate, '=' * 20)

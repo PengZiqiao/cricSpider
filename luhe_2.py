@@ -5,7 +5,8 @@ from time import sleep
 import pandas as pd
 import xlwings as xw
 
-from spider import CricSpider, json_load
+from spider import CricSpider
+from consts import areas
 
 
 class ToExcel:
@@ -28,7 +29,7 @@ class ToExcel:
         sht.range('A1').value = df
         wb.save()
         wb.close()
-        print('>>> 【{sheet}】保存成功！')
+        print(f'>>> 【{sheet}】保存成功！')
 
 
 class PianQu(CricSpider):
@@ -37,9 +38,9 @@ class PianQu(CricSpider):
     short_yearly = ('2013年', '2017年')
     x_range = ('2007年', '2017年')
     # 基准库存, 其他库存按照这个值,结合供销量,向前向后推算
-    stock_dict = json_load('stock_dict')
+    # stock_dict = json_load('stock_dict')
 
-    area_dict = json_load('area_dict')
+    area_dict = areas
 
     def download2df(self):
         while True:
