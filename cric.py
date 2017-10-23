@@ -8,6 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 
 from consts import cookies, areas, stocks
 
+import json
+
 
 class CricSpider:
     def __init__(self, city):
@@ -96,9 +98,9 @@ class CricSpider:
     #################################################
     # 市场监测相关
     #################################################
-    def monitor_page(self, city):
+    def monitor_page(self):
         """跳转到市场监测页面"""
-        url = f'{self.url}Statistic/MarketMonitor/MarketMonitoringIndex?CityName={city}'
+        url = f'{self.url}Statistic/MarketMonitor/MarketMonitoringIndex?CityName={self.city}'
         self.driver.get(url)
         sleep(0.2)
         self.wait.until(lambda driver: driver.find_element_by_xpath("//input[@value='统计']"))
@@ -134,18 +136,13 @@ class CricSpider:
         """区域选择"""
         # 找到“不限”，单击
         self.driver.find_element_by_xpath("//div[@name='regionselecter_region_block']/div/div/p").click()
+        sleep(0.5)
 
-        # area_xpath为需选中区域的label，待其出现后单击选中
-        if area == '全选':
-            sleep(0.5)
-            for each in ['蜀山区', '庐阳区', '政务区', '高新区', '瑶海区', '滨湖区', '包河区', '经济区', '新站区', '肥东县', '肥西县', '长丰县']:
-                area_xpath = f"//div[@name='regionselecter_region_block']//label[text()='{each}']"
-                self.driver.find_element_by_xpath(area_xpath).click()
-        else:
-            area_xpath = f"//div[@name='regionselecter_region_block']//label[text()='{area}']"
-            self.wait.until(lambda driver: driver.find_element_by_xpath(area_xpath).is_displayed())
-            self.driver.find_element_by_xpath(area_xpath).click()
-            sleep(0.2)
+        area_xpath = f"//div[@name='regionselecter_region_block']//label[text()='{area}']"
+        self.wait.until(lambda driver: driver.find_element_by_xpath(area_xpath).is_displayed())
+        self.driver.find_element_by_xpath(area_xpath).click()
+        sleep(0.2)
+
         # 确定
         self.click('确定')
 
@@ -196,7 +193,7 @@ class CricSpider:
         :return df
         """
         # 跳转到市场监测-综合分析
-        self.monitor_page('合肥')
+        self.monitor_page()
 
         # 纵轴
         if index:
@@ -270,15 +267,14 @@ class CricSpider:
     def land_area(self, area_tuple):
         """选择省份,城市,区域"""
         # 分别执行点开菜单,等待选项显示,选中选项
-        for i, key in enumerate(['Province', 'City', 'Region']):
+        keys = ['Province', 'City', 'Region']
+        if len(area_tuple) == 4:
+            keys.append('District')
+
+        for i, key in enumerate(keys):
             self.driver.find_element_by_id(f'select{key}').click()
             self.wait.until(lambda driver: driver.find_element_by_link_text(area_tuple[i]).is_displayed())
             self.click(area_tuple[i])
-
-        # 全市
-        if area_tuple[-1] == '全选':
-            self.click('庐江县')
-            self.click('巢湖市')
 
         # 确定
         self.driver.find_element_by_class_name('areayes').click()
@@ -326,9 +322,9 @@ class CricSpider:
 
 class Query(CricSpider):
     this_year = ('2017年', '2017年')
-    this_year_monthly = ('2017年01月', '2017年08月')
+    this_year_monthly = ('2017年01月', '2017年09月')
     short_year_range = ('2013年', '2017年')
-    year_range = ('2007年', '2017年')
+    year_range = ('2009年', '2017年')
 
     def gxj(self, plate, pianqu, date_range):
         def ajust_df(df):
@@ -345,40 +341,40 @@ class Query(CricSpider):
     def pianqu_stock(self, area_tuple):
         plate = area_tuple[0]
         pianqu = area_tuple[1]
-        date_range = ('2006年08月', '2017年08月')
+        date_range = ('2009年01月', '2017年10月')
         df = self.monitor(date_range, ['供应面积', '成交面积'], area2=(plate, pianqu)).drop('汇总')
         df['库存'] = 0
         # 计算滚动6个月月均成交面积
         df['去化速度'] = df['成交面积'].rolling(6).mean()
 
-        # 以2016年12月库存向过去推算
-        df_ = df[date_range[0]:'2016年12月']
+        # 以2017年10月库存向过去推算
         stk = sum(list(stocks[pianqu] for pianqu in areas[plate]))
-        for index in reversed(df_.index):
-            df_.at[index, '库存'] = stk
+        for index in reversed(df.index):
+            df.at[index, '库存'] = stk
             # 上期库存(在下一次迭代时赋值给['库存']) = 本期库存 - (本期上市 - 本期成交)
-            stk -= df_.at[index, '供应面积'] - df_.at[index, '成交面积']
+            stk -= df.at[index, '供应面积'] - df.at[index, '成交面积']
 
-        # 向未来推算
-        df_ = df['2017年01月':date_range[1]]
-        stk = sum(list(stocks[pianqu] for pianqu in areas[plate]))
-        for index in df_.index:
-            # 本期库存 = 上期库存 + (本期上市 - 本期成交)
-            stk += df_.at[index, '供应面积'] - df_.at[index, '成交面积']
-            df_.at[index, '库存'] = stk
+        # # 向未来推算
+        # df_ = df['2017年01月':date_range[1]]
+        # stk = sum(list(stocks[pianqu] for pianqu in areas[plate]))
+        # for index in df_.index:
+        #     # 本期库存 = 上期库存 + (本期上市 - 本期成交)
+        #     stk += df_.at[index, '供应面积'] - df_.at[index, '成交面积']
+        #     df_.at[index, '库存'] = stk
 
         # 去化周期 = 存量 / 去化速度速度
         df['去化周期'] = df['库存'] / df['去化速度']
         # 面积换算成万方
         df['库存'] = df['库存'] / 1e4
-        # 留两位小数
+        # 只留两列，留两位小数
         df = df[['库存', '去化周期']].round(2)
 
         # 年度
-        df_year = df['2007年01月':'2016年12月']
+        df_year = df['2009年01月':'2016年12月'].copy()
         for each in df_year.index:
             if '12月' not in each:
                 df_year = df_year.drop(each)
+        df_year = df_year.append(df['2017年08月':'2017年08月'])
 
         # 月度
         df_month = df['2017年01月':'2017年08月']
@@ -555,3 +551,10 @@ class Query(CricSpider):
         df = df.replace('蜀山新产业园板块', '蜀山产业园板块')
 
         return df.round(2)
+
+
+if __name__ == '__main__':
+    c = CricSpider('苏州')
+    cookies = c.driver.get_cookies()
+    with open('cookies.txt', 'w') as f:
+        json.dump(cookies, f)

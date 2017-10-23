@@ -1,1 +1,2 @@
-python spider.py
+python cric.py
+pause

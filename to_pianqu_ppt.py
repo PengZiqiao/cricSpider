@@ -6,7 +6,7 @@ from office import PPT
 
 
 class CityPPT(PPT):
-    path = r'E:\city_report\合肥\2017-09-12'
+    path = r'E:\city_report\合肥\2017-09-19'
 
     def excel2chart(self, placehold, file, sheet, index, columns=[]):
         df = pd.read_excel(file, sheet, index_col=0)
@@ -55,42 +55,45 @@ class CityPPT(PPT):
 
         # 板块名及标题
         placehold[11].text = plate
-        placehold[12].text = f'【{pianqu_}-市场量价】'
+        placehold[12].text = pianqu_
 
         file = f'{self.path}/{plate}_{pianqu}.xlsx'
-        index_year = list(f'{x:02d}' for x in range(7, 17))
+        index_year = list(f'{x:02d}' for x in range(9, 17))
         index_year.append('17.1-8')
-        index_year_ = list(f'{x:02d}' for x in range(7, 17))
+        index_year_ = list(f'{x:02d}' for x in range(9, 17))
         index_year_.append('17.8')
         index_month = list(f'17.0{x}' for x in range(1, 9))
+        columns_year_gxj = ['住宅用地可建面(万㎡)', '上市面积(万㎡)', '成交面积(万㎡)', '均价(元/㎡)']
         columns_gxj = ['上市面积(万㎡)', '成交面积(万㎡)', '均价(元/㎡)']
         columns_stk = ['库存(万㎡)', '去化周期(月)']
 
+        # conclusion
+        placehold[22].text = '【市场量价】结论..'
+        placehold[23].text = '【存量水平】结论..'
+
         # chart1
-        placehold[14].text = f'2007-2017.8{pianqu_}商品住宅年度供销走势'
+        # placehold[14].text = f'2007-2017.8{pianqu_}商品住宅年度供销走势'
         sheet = '年度供销价'
-        self.excel2chart(placehold[15], file, sheet, index_year, columns_gxj)
+        self.excel2chart(placehold[15], file, sheet, index_year, columns_year_gxj)
 
         # chart2
-        placehold[16].text = f'2017年1-8月{pianqu_}商品住宅月度供销走势'
+        # placehold[16].text = f'2017年1-8月{pianqu_}商品住宅月度供销走势'
         sheet = '月度供销价'
         self.excel2chart(placehold[17], file, sheet, index_month, columns_gxj)
 
         # chart3
-        placehold[18].text = f'2007-2016{pianqu_}商品住宅存量及去化周期年度走势'
+        # placehold[18].text = f'2007-2017.8{pianqu_}商品住宅存量及去化周期年度走势'
         sheet = '年度库存'
         self.excel2chart(placehold[19], file, sheet, index_year_, columns_stk)
 
         # chart4
-        placehold[20].text = f'2017.1-2017.8{pianqu_}商品住宅存量及去化周期月度走势'
+        # placehold[20].text = f'2017.1-2017.8{pianqu_}商品住宅存量及去化周期月度走势'
         sheet = '月度库存'
         self.excel2chart(placehold[21], file, sheet, index_month, columns_stk)
 
 
 if __name__ == '__main__':
-    area_dict = areas
-
-    for plate in area_dict:
+    for plate in areas:
         print('=' * 20, plate, '=' * 20)
         # 创建一个新的ppt
         ppt = CityPPT()
@@ -99,7 +102,7 @@ if __name__ == '__main__':
         ppt.new_plate_slide(plate)
 
         # 各片区市场
-        for pianqu in area_dict[plate]:
+        for pianqu in areas[plate]:
             print(f'>>> {pianqu}')
             ppt.new_pianqu_slide(plate, pianqu)
 

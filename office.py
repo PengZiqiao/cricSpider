@@ -12,19 +12,29 @@ class ToExcel:
 
     def creat_book(self, path):
         """创建一个新的excel文件"""
-        wb = self.app.books.add()
-        wb.save(path)
-        wb.close()
+        self.wb = self.app.books.add()
+        self.wb.save(path)
 
-    def df2sheet(self, book, sheet, df):
+
+    def df2sheet(self, sheet, df):
         """在指定excel文件下创建一个新的sheet,并写上df保存"""
-        wb = self.app.books.open(book)
-        sheets = wb.sheets
+        sheets = self.wb.sheets
         sht = sheets.add(sheet, after=len(sheets))
+        sht.range('A1').value = df
+        self.wb.save()
+        print('>>> 保存成功！')
+
+    def rewrite_sheet(self, book, sheet, df):
+        wb = self.app.books.open(book)
+        sht = wb.sheets[sheet]
+        sht.clear()
         sht.range('A1').value = df
         wb.save()
         wb.close()
         print('>>> 保存成功！')
+
+    def close(self):
+        self.wb.close()
 
 
 class PPT:
